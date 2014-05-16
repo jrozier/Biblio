@@ -1,4 +1,4 @@
 Biblio
 ======
 
-Python script for parsing and creating proper citations.
+A Python script for parsing and creating citations.
