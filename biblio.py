@@ -3,10 +3,10 @@
 import sys
 import re
 import csv
-import os
-#sys.path.insert(0, "C:/Python33/xlwt-future-0.8.0") 
+import os 
 import xlwt
 import xlrd
+import xlsxwriter
 
 
 # Function: load_menu
@@ -41,31 +41,53 @@ def load_main_menu():
 #
 #
 def load_column_headers():
-    header = ["Author (Last, First)","Book Title",
+    book_header = ["Author (Last, First)","Book Title",
               "Publication City", "Publisher", 
               "Year of Publication", 
               "Medium (Print or Online)"
               ]
+    es_header = ["Author (Last, First)", "Article Name", 
+                 "Title of Website", "Version Numbers", "Publisher",
+                 "Publication Year", "Page Numbers", "Medium of Publication",
+                 "Date Accessed", "URL"]
+    
 
-    return header
+    headers = []
+    headers.append(book_header)
+    headers.append(es_header)
+    return headers
 
 # Function: intialize_excelsheet
 #--------------------------------
 #
 #
 def initialize_excelsheet(fileName):
-    workbook = xlwt.Workbook()
-    sheet = workbook.add_sheet("Biblio")
+    workbook = xlsxwriter.Workbook(fileName)
+    sheets = []
+    sheets.append(workbook.add_worksheet("Books"))
+    sheets.append(workbook.add_worksheet("Electronic Sources"))
 
-    header_style = xlwt.easyxf('font: bold 1; align: horiz center; borders: bottom 1')
-    header = load_column_headers()
-    for i in range(0,len(header)):
-        sheet.write(0,i, header[i], header_style)
-        sheet.col(i).width = 256*(len(header[i])+1)
-        if i == 1:
-            sheet.col(i).width = sheet.col(i).width*2
+    #Initializes formating for header columns
+    header_format = workbook.add_format()
+    header_format.set_bold()
+    header_format.set_bottom()
+    header_format.set_align('center')
 
-    workbook.save(fileName)
+
+    headers = load_column_headers()
+    for i in range(0,len(headers)):
+        sheet = sheets[i]
+        header = headers[i]
+        for c in range(0,len(header)):
+            sheet.write(0,c, header[c], header_format)
+            if header[c] == 'Book Title':
+                size_factor = 2
+            elif header[c] == 'URL':
+                size_factor = 8
+            else:
+                size_factor = 1
+            sheet.set_column(c, c, size_factor*(len(header[c])+1))
+
 
 # Function: text_to_excel
 #-------------------------
@@ -73,7 +95,7 @@ def initialize_excelsheet(fileName):
 #
 def text_to_excel():
     textFileName = input("Enter the name of the input file: (Use .txt) \n")
-    excelFileName = input('Name the output file: (Use .xls) \n')
+    excelFileName = input('Name the output file: (Use .xlsx) \n')
 
     file = open(textFileName, 'r')
     line = file.read()
@@ -97,7 +119,7 @@ def text_to_excel():
 #
 #
 def excel_to_text():
-    excelFileName = input('Name the input file: (Use .xls) \n')
+    excelFileName = input('Name the input file: (Use .xlsx) \n')
     textFileName = input("Name the output file: (Use .txt) \n")
 
     initialize_excelsheet(excelFileName)
@@ -117,7 +139,7 @@ def excel_to_text():
     
     textFile = open(textFileName, 'w')
     workbook= xlrd.open_workbook(excelFileName)
-    worksheet = workbook.sheet_by_name('Biblio')
+    worksheet = workbook.sheet_by_name('Books')
 
     numRows = worksheet.nrows -1
     curRow = 0
